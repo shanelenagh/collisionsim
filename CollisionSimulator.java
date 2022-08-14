@@ -28,12 +28,15 @@ public class CollisionSimulator {
 	
 	private static class Aircraft {
 		final Point2D.Double loc;
+		final double startX, startY;
 		final Color color;
 		final double velo;
 		final int heading;
 		
 		public Aircraft(Point2D.Double loc, Color color, double velo, int heading) {
 			this.loc = loc;
+			this.startX = loc.x;
+			this.startY = loc.y;
 			this.color = color;
 			this.velo = velo;
 			this.heading = heading;
@@ -45,10 +48,10 @@ public class CollisionSimulator {
 
 	private static class CollisionSimulatorGUI extends Canvas implements Runnable {
 		// Below block items are the config parameters for the simulation--change as desired (until UI developed)
-		private double timeAccelerator = 30.0;
+		private double timeAccelerator = 60.0;
 		private double milesPerPixel = 1.0;
 		private Aircraft ac1 = new Aircraft(new Point2D.Double(0 / milesPerPixel,0 / milesPerPixel),
-			new Color(0, 153, 0), 350.0, 60);
+			new Color(0, 153, 0), 400.0, 45);
 		private Aircraft ac2 = new Aircraft(new Point2D.Double(60 / milesPerPixel,0 / milesPerPixel),
 			new Color(153, 0, 0), 300.0, 90);		
 		private int collisionMilesLimit = 10;
@@ -56,7 +59,7 @@ public class CollisionSimulator {
 		private double distPx;
 		
 		private long timeCounter = System.currentTimeMillis();
-		private int secondCounter = 0;
+		private double secondCounter = 0;
 		private int cellSize;
 		private boolean isStateChanged = true;
 		
@@ -71,15 +74,16 @@ public class CollisionSimulator {
 		@Override
 		public void run() {
 			System.out.println("Calculated collision time is "+calculatedCollisionTime(ac1, ac2)*60.0*60.0); 
+			final long startTime = System.currentTimeMillis();
 			while (true)
-				if (System.currentTimeMillis() - timeCounter > 1000 || secondCounter == 0) {
+				if (System.currentTimeMillis() - timeCounter > 200) {
 					this.timeCounter = System.currentTimeMillis();
-					this.secondCounter += 1;
-					ac1.loc.x += ac1.veloX() / 60.0 / 60.0 * timeAccelerator;
-					ac1.loc.y += ac1.veloY() / 60.0 / 60.0 * timeAccelerator;
-					ac2.loc.x += ac2.veloX() / 60.0 / 60.0 * timeAccelerator;
-					ac2.loc.y += ac2.veloY() / 60.0 / 60.0 * timeAccelerator;
-					this.distPx = Point2D.distance(ac1.loc.x, ac1.loc.y, ac2.loc.x, ac2.loc.y);
+					final long timediff = this.timeCounter - startTime;
+					this.secondCounter = (timediff/1000.00);
+					ac1.loc.x = ac1.startX + ac1.veloX() / 60.0 / 60.0 * timeAccelerator * (timediff/1000.00);
+					ac1.loc.y = ac1.startY + ac1.veloY() / 60.0 / 60.0 * timeAccelerator * (timediff/1000.00);
+					ac2.loc.x = ac2.startX + ac2.veloX() / 60.0 / 60.0 * timeAccelerator * (timediff/1000.00);
+					ac2.loc.y = ac2.startY + ac2.veloY() / 60.0 / 60.0 * timeAccelerator * (timediff/1000.00);					this.distPx = Point2D.distance(ac1.loc.x, ac1.loc.y, ac2.loc.x, ac2.loc.y);
 					this.isColliding = distPx*milesPerPixel < collisionMilesLimit;
 					this.isStateChanged = true;
 					repaint();
@@ -172,7 +176,7 @@ public class CollisionSimulator {
 			g.fillRect(0, getHeight()-15, getWidth(), getHeight());
 			g.setColor(Color.BLACK);
 			final String msg = String.format(
-				"%ds (%.0fs sim) - green: %.1f,%.1f \u2192 red: %.1f,%.1f = %.1fpx (%.1fnmi) %s",
+				"%.1fs (%.0fs sim) - green: %.1f,%.1f \u2192 red: %.1f,%.1f = %.1fpx (%.1fnmi) %s",
 				secondCounter, secondCounter*timeAccelerator, ac1.loc.x, ac1.loc.y, ac2.loc.x, ac2.loc.y, 
 				distPx, distPx*milesPerPixel, isColliding ? "COLLIDING" : "");
 			g.drawString(msg, 0, getHeight()-2);

@@ -73,17 +73,21 @@ public class CollisionSimulator {
 		
 		@Override
 		public void run() {
-			System.out.println("Calculated collision time is "+calculatedCollisionTime(ac1, ac2)*60.0*60.0); 
+			final double projCollisionTime = calculatedCollisionTime(ac1, ac2);
+			final Point2D.Double ac1Coll = aircraftPointAtTime(ac1, projCollisionTime), ac2Coll = aircraftPointAtTime(ac2, projCollisionTime);
+			System.out.println("Calculated collision time is "+projCollisionTime*60.0*60.0
+				+" at "+ac1Coll+" and "+ac2Coll+" at distance of "+Point2D.distance(ac1Coll.x, ac1Coll.y, ac2Coll.x, ac2Coll.y)); 
 			final long startTime = System.currentTimeMillis();
 			while (true)
-				if (System.currentTimeMillis() - timeCounter > 200) {
+				if (System.currentTimeMillis() - timeCounter > 130) {
 					this.timeCounter = System.currentTimeMillis();
 					final long timediff = this.timeCounter - startTime;
 					this.secondCounter = (timediff/1000.00);
 					ac1.loc.x = ac1.startX + ac1.veloX() / 60.0 / 60.0 * timeAccelerator * (timediff/1000.00);
 					ac1.loc.y = ac1.startY + ac1.veloY() / 60.0 / 60.0 * timeAccelerator * (timediff/1000.00);
 					ac2.loc.x = ac2.startX + ac2.veloX() / 60.0 / 60.0 * timeAccelerator * (timediff/1000.00);
-					ac2.loc.y = ac2.startY + ac2.veloY() / 60.0 / 60.0 * timeAccelerator * (timediff/1000.00);					this.distPx = Point2D.distance(ac1.loc.x, ac1.loc.y, ac2.loc.x, ac2.loc.y);
+					ac2.loc.y = ac2.startY + ac2.veloY() / 60.0 / 60.0 * timeAccelerator * (timediff/1000.00);					
+					this.distPx = Point2D.distance(ac1.loc.x, ac1.loc.y, ac2.loc.x, ac2.loc.y);
 					this.isColliding = distPx*milesPerPixel < collisionMilesLimit;
 					this.isStateChanged = true;
 					repaint();
@@ -92,7 +96,11 @@ public class CollisionSimulator {
 						this.isStateChanged = false; 
 						Thread.sleep(100); 
 					} catch (InterruptedException ie) { /* Interruptions can just continue */ }
-		}		
+		}	
+
+		private Point2D.Double aircraftPointAtTime(Aircraft ac, double time) {
+			return new Point2D.Double(ac.loc.x + ac.veloX()*time, ac.loc.y + ac.veloY()*time);
+		}
 
 		private void setupBackBuffer() {			
 			backBuffer = this.createImage(getWidth(), getHeight());
